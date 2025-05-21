@@ -1,33 +1,43 @@
+#SOURCES:
+# https://docs.opencv.org/4.x/dd/d43/tutorial_py_video_display.html
+# https://github.com/arunponnusamy/cvlib
+# https://www.geeksforgeeks.org/python-opencv-cv2-puttext-method/
+
 import cv2
-import mediapipe as mp
-print(mp.__version__)
-import numpy as np
-import time
-import os
+import cvlib as cv
 
-mp_pose = mp.solutions.pose
-mp_drawing = mp.solutions.drawing_utils
-pose = mp_pose.Pose(static_image_mode=False, min_detection_confidence=0.5, min_tracking_confidence=0.5)
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(0) # This will open a connection to the webcam of my phone
 
-while cap.isOpened():
+if not cap.isOpened():
+    print("Error: Cannot open camera")
+    exit()
+
+while True:
     ret, frame = cap.read()
     if not ret:
-        continue
+        break
 
-    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    results = pose.process(rgb_frame)
+    faces, confidences = cv.detect_face(frame)
 
-    if results.pose_landmarks:
-        landmarks = results.pose_landmarks.landmark
+    for face in faces: # Looping through each face's box
+        startX, startY, endX, endY = face
+        cv2.rectangle(frame, (startX, startY), (endX, endY), (0,255,0),2)# This should draw a box around each identified face
+        
+    count_text = f"People in room: {len(faces)}"
 
-       # left_shoulder = (int(landmarks[mp.pose.PoseLandmark.LEFT_SHOULDER.value].x * frame.shape[1]), int(landmarks[mp.pose.PoseLandmark.LEFT_SHOULDER.value].x * frame.shape[1]))
+    # This will display the number of ppl identified on screen
+    cv2.putText(frame, count_text,
+                (12, 65),
+                cv2.FONT_HERSHEY_TRIPLEX,
+                2,
+                (245, 66, 70),
+                3)
+    
+    cv2.imshow("result", frame)
+   
+    key = cv2.waitKey(1)
+    if key == ord('q'):
+        break
 
-# video = cv2.VideoCapture(0)
-
-# while True:
-#     status, frame = video.read()
-#     gray = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY) #Change to gray scale format
-#     gray = cv2.GaussianBlur(gray, (21,21), 0)
-#     cv2.imshow("Gray Video", gray)
-#     key = cv2.waitKey(1)
+cap.release()
+cv2.destroyAllWindows
